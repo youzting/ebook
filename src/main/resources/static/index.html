@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="부산·서울 7개 도서관 전자책을 한 번에 찾는 통합 챗 검색">
+  <title>모아책 — 전자책 통합검색</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="모아책 홈">
+      <span class="brand-mark">ㅁ</span>
+      <span>모아책</span>
+    </a>
+    <div class="top-status"><span class="pulse"></span> 전자도서관 5곳 연결</div>
+  </header>
+
+  <main class="layout">
+    <aside class="sources" aria-label="검색 도서관 선택">
+      <div class="aside-heading">
+        <p class="eyebrow">LIBRARIES</p>
+        <h2>검색할 도서관</h2>
+        <button id="toggleAll" type="button">전체 해제</button>
+      </div>
+      <div id="sourceList" class="source-list"></div>
+      <div class="source-note">
+        <span>i</span>
+        <p>도서관 정책에 따라 일부 결과는 공식 사이트에서 확인합니다.</p>
+      </div>
+    </aside>
+
+    <section class="chat-shell">
+      <div class="hero">
+        <p class="eyebrow">ONE SEARCH, EVERY SHELF</p>
+        <h1>찾고 싶은 책을<br><em>말하듯이</em> 검색하세요.</h1>
+        <p>부산과 서울의 전자도서관을 오가며 찾지 않아도 돼요.<br>제목, 저자, 관심사를 자연스럽게 입력해 보세요.</p>
+      </div>
+
+      <div id="conversation" class="conversation" aria-live="polite">
+        <article class="message assistant-message">
+          <div class="avatar">ㅁ</div>
+          <div class="bubble">
+            <strong>어떤 전자책을 찾고 계세요?</strong>
+            <p>예를 들면 “요즘 읽기 좋은 AI 입문서 찾아줘”처럼 물어보세요.</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="suggestions" aria-label="추천 검색어">
+        <button type="button">김영하 작가 책 찾아줘</button>
+        <button type="button">대출 가능한 AI 입문서</button>
+        <button type="button">경제 공부 전자책 추천해줘</button>
+      </div>
+
+      <form id="chatForm" class="composer">
+        <label class="sr-only" for="chatInput">전자책 검색 질문</label>
+        <textarea id="chatInput" rows="1" maxlength="200" placeholder="찾고 싶은 책이나 관심 주제를 입력하세요" required></textarea>
+        <button id="sendButton" type="submit" aria-label="검색하기">검색 <span>↗</span></button>
+        <div class="composer-meta"><span>Enter로 검색 · Shift+Enter로 줄바꿈</span><span id="selectedCount">5개 도서관</span></div>
+      </form>
+
+      <section id="resultsSection" class="results-section" hidden>
+        <div class="results-heading">
+          <div><p class="eyebrow">SEARCH RESULTS</p><h2 id="resultsTitle">검색 결과</h2></div>
+          <span id="resultCount" class="count-badge"></span>
+        </div>
+        <div class="result-controls" aria-label="검색 결과 보기 방식">
+          <div class="view-switch" role="group" aria-label="정렬 방식">
+            <button type="button" class="active" data-view="library">도서관 순서로 보기</button>
+            <button type="button" data-view="sequence">제목 순차로 보기</button>
+          </div>
+          <label class="availability-filter">
+            <input id="availableOnly" type="checkbox">
+            <span class="toggle-track"><span></span></span>
+            대출 가능한 목록만 보기
+          </label>
+        </div>
+        <div id="resultsGrid" class="results-grid"></div>
+        <div id="linkResults" class="link-results"></div>
+      </section>
+    </section>
+  </main>
+
+  <footer>모아책은 각 도서관의 공개 검색 정보를 안내하며, 대출은 해당 도서관 로그인 후 이용할 수 있습니다.</footer>
+  <script src="/app.js" defer></script>
+</body>
+</html>

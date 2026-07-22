@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: ebook-chat-search
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: ${PORT:8080}
+  compression:
+    enabled: true
+
+logging:
+  level:
+    com.example.ebooksearch: INFO

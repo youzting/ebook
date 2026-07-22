@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>전자책 통합검색 테스트</title>
+  <style>
+    :root { color-scheme: light; --green:#17362d; --line:#d7ddd9; --bg:#f4f2ec; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:#1f312b; font-family:Arial,"Noto Sans KR",sans-serif; }
+    main { width:min(1100px,calc(100% - 32px)); margin:40px auto; }
+    header { display:flex; align-items:end; justify-content:space-between; gap:20px; margin-bottom:22px; }
+    h1 { margin:0 0 6px; font-size:28px; }
+    header p { margin:0; color:#68756f; font-size:13px; }
+    header a { color:var(--green); font-size:13px; }
+    .panel { padding:22px; border:1px solid var(--line); border-radius:14px; background:white; }
+    label.title { display:block; margin-bottom:8px; font-size:13px; font-weight:700; }
+    .search-row { display:flex; gap:8px; }
+    input[type=text] { flex:1; min-width:0; height:46px; padding:0 14px; border:1px solid #b9c4be; border-radius:9px; font-size:15px; }
+    button { height:46px; padding:0 20px; border:0; border-radius:9px; color:white; background:var(--green); font-weight:700; cursor:pointer; }
+    button:disabled { opacity:.5; cursor:wait; }
+    .presets { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+    .presets button { height:auto; padding:7px 10px; border:1px solid var(--line); color:#52635b; background:#f8faf8; font-size:11px; font-weight:400; }
+    .libraries { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:20px; }
+    .library { display:flex; gap:7px; align-items:center; padding:10px; border:1px solid var(--line); border-radius:8px; font-size:12px; cursor:pointer; }
+    .library input { accent-color:var(--green); }
+    .summary { display:flex; gap:10px; margin:18px 0; }
+    .metric { flex:1; padding:14px; border:1px solid var(--line); border-radius:10px; background:white; }
+    .metric small { display:block; color:#77847e; }
+    .metric strong { display:block; margin-top:4px; font-size:20px; }
+    .tabs { display:flex; gap:8px; margin-bottom:10px; }
+    .tabs button { height:36px; padding:0 14px; border:1px solid var(--line); color:#4a5c54; background:white; font-size:12px; }
+    .tabs button.active { color:white; background:var(--green); border-color:var(--green); }
+    .view { display:none; }
+    .view.active { display:block; }
+    .books { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .book { display:grid; grid-template-columns:58px 1fr; gap:12px; min-height:100px; padding:12px; border:1px solid var(--line); border-radius:10px; background:white; }
+    .book img,.cover { width:58px; height:82px; object-fit:cover; border-radius:4px; background:#dce3df; }
+    .cover { display:grid; place-items:center; padding:6px; color:white; background:var(--green); text-align:center; font-size:9px; }
+    .book h3 { margin:3px 0 7px; font-size:13px; line-height:1.35; }
+    .book p { margin:3px 0; color:#6a7771; font-size:10px; }
+    .book a { color:var(--green); font-size:10px; font-weight:700; }
+    .status-list { display:grid; gap:7px; }
+    .status { display:flex; justify-content:space-between; gap:12px; padding:11px 13px; border:1px solid var(--line); border-radius:8px; background:white; font-size:11px; }
+    .connected { color:#308243; font-weight:700; }
+    .link_only { color:#aa6d22; font-weight:700; }
+    .unavailable { color:#bb3939; font-weight:700; }
+    pre { min-height:300px; max-height:620px; margin:0; padding:18px; overflow:auto; border-radius:10px; color:#dce9e3; background:#15251f; font:12px/1.55 Consolas,monospace; white-space:pre-wrap; }
+    .empty { padding:50px 20px; border:1px dashed #b9c4be; border-radius:10px; color:#7a8680; text-align:center; }
+    #error { display:none; margin-top:12px; padding:10px 12px; border-radius:8px; color:#a12525; background:#ffe8e8; font-size:12px; }
+    @media(max-width:760px) { .libraries{grid-template-columns:repeat(2,1fr)} .books{grid-template-columns:1fr} .summary{flex-wrap:wrap}.metric{min-width:40%} }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div><h1>전자책 통합검색 테스트</h1><p>로컬 API: POST /api/v1/search/chat</p></div>
+    <a href="/">서비스 페이지로 이동</a>
+  </header>
+
+  <section class="panel">
+    <label class="title" for="query">테스트 검색어</label>
+    <form id="form" class="search-row">
+      <input id="query" type="text" value="대출 가능한 AI 입문서 찾아줘" maxlength="200" required>
+      <button id="submit" type="submit">API 테스트</button>
+    </form>
+    <div class="presets">
+      <button type="button">김영하 작가 책 찾아줘</button>
+      <button type="button">경제 공부 전자책 추천해줘</button>
+      <button type="button">해리포터 찾아줘</button>
+    </div>
+    <div id="libraries" class="libraries"></div>
+    <div id="error"></div>
+  </section>
+
+  <section class="summary">
+    <div class="metric"><small>응답 상태</small><strong id="httpStatus">대기</strong></div>
+    <div class="metric"><small>응답 시간</small><strong id="elapsed">-</strong></div>
+    <div class="metric"><small>검색 도서</small><strong id="bookCount">0권</strong></div>
+    <div class="metric"><small>연결 성공</small><strong id="connectedCount">0곳</strong></div>
+  </section>
+
+  <div class="tabs">
+    <button class="active" data-tab="booksView" type="button">검색 결과</button>
+    <button data-tab="statusView" type="button">도서관 상태</button>
+    <button data-tab="jsonView" type="button">원본 JSON</button>
+  </div>
+  <section id="booksView" class="view active"><div id="books" class="empty">API 테스트 버튼을 눌러주세요.</div></section>
+  <section id="statusView" class="view"><div id="statuses" class="status-list"></div></section>
+  <section id="jsonView" class="view"><pre id="json">아직 요청하지 않았습니다.</pre></section>
+</main>
+
+<script>
+  const sources = [
+    ['simin','부산시립시민도서관'], ['busan-elib','부산광역시 전자도서관'],
+    ['bukgu-ebook','부산 북구 전자도서관'], ['gangseo','부산강서전자도서관'],
+    ['uos','서울시립대 전자도서관']
+  ];
+  const libraries = document.querySelector('#libraries');
+  libraries.innerHTML = sources.map(([id,name]) =>
+    '<label class="library"><input type="checkbox" value="'+id+'" checked> '+name+'</label>').join('');
+
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+
+  document.querySelectorAll('.tabs button').forEach(button => button.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button,.view').forEach(item => item.classList.remove('active'));
+    button.classList.add('active');
+    document.querySelector('#' + button.dataset.tab).classList.add('active');
+  }));
+
+  document.querySelector('.presets').addEventListener('click', event => {
+    if (event.target.tagName === 'BUTTON') document.querySelector('#query').value = event.target.textContent;
+  });
+
+  document.querySelector('#form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const submit = document.querySelector('#submit');
+    const error = document.querySelector('#error');
+    const selected = [...libraries.querySelectorAll('input:checked')].map(input => input.value);
+    if (!selected.length) { error.style.display='block'; error.textContent='도서관을 하나 이상 선택하세요.'; return; }
+    error.style.display='none'; submit.disabled=true; submit.textContent='검색 중...';
+    document.querySelector('#httpStatus').textContent='요청 중';
+    const started = performance.now();
+    try {
+      const response = await fetch('/api/v1/search/chat', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({message:document.querySelector('#query').value, libraryIds:selected})
+      });
+      const data = await response.json();
+      const elapsed = Math.round(performance.now() - started);
+      document.querySelector('#httpStatus').textContent=response.status + ' ' + (response.ok ? 'OK' : 'ERROR');
+      document.querySelector('#elapsed').textContent=elapsed.toLocaleString() + 'ms';
+      document.querySelector('#bookCount').textContent=(data.totalMatches || 0) + '종';
+      document.querySelector('#connectedCount').textContent=(data.libraries?.filter(x=>x.status==='CONNECTED').length || 0) + '곳';
+      document.querySelector('#json').textContent=JSON.stringify(data,null,2);
+      document.querySelector('#books').className=data.books?.length ? 'books' : 'empty';
+      document.querySelector('#books').innerHTML=data.books?.length ? data.books.map(book => {
+        const cover=book.coverUrl ? '<img src="'+esc(book.coverUrl)+'" alt="">' : '<div class="cover">'+esc(book.title)+'</div>';
+        return '<article class="book">'+cover+'<div><p>'+esc(book.source.displayName)+'</p><h3>'+esc(book.title)+'</h3><p>'+esc(book.author)+' · '+esc(book.availability)+'</p><a href="'+esc(book.detailUrl)+'" target="_blank">상세보기 ↗</a></div></article>';
+      }).join('') : '검색 결과가 없습니다.';
+      document.querySelector('#statuses').innerHTML=(data.libraries || []).map(item =>
+        '<div class="status"><div><strong>'+esc(item.name)+'</strong><br><span>'+esc(item.message)+
+        (item.totalCopies ? ' · '+item.totalCount+'종 '+item.totalCopies+'권' : (item.totalCount ? ' · '+item.totalCount+'종' : ''))+
+        '</span></div><span class="'+item.status.toLowerCase()+'">'+item.status+'</span></div>').join('');
+    } catch (cause) {
+      document.querySelector('#httpStatus').textContent='실패';
+      error.style.display='block'; error.textContent='요청 실패: ' + cause.message;
+    } finally {
+      submit.disabled=false; submit.textContent='API 테스트';
+    }
+  });
+</script>
+</body>
+</html>

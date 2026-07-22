@@ -10,10 +10,14 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
 public class RemoteHttpClient {
+  private static final Logger log = LoggerFactory.getLogger(RemoteHttpClient.class);
+  private static final int MAX_ATTEMPTS = 3;
   private final HttpClient client = HttpClient.newBuilder()
       .connectTimeout(Duration.ofSeconds(5))
       .followRedirects(HttpClient.Redirect.NORMAL)
@@ -26,7 +30,7 @@ public class RemoteHttpClient {
         .header("Accept", "text/html,application/json")
         .GET()
         .build();
-    return send(request);
+    return sendWithRetry(request);
   }
 
   public String postForm(String url, Map<String, String> form)
@@ -42,14 +46,26 @@ public class RemoteHttpClient {
         .header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
         .POST(HttpRequest.BodyPublishers.ofString(body))
         .build();
-    return send(request);
+    return sendWithRetry(request);
   }
 
-  private String send(HttpRequest request) throws IOException, InterruptedException {
-    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 400) {
-      throw new IOException("Remote status: " + response.statusCode());
+  private String sendWithRetry(HttpRequest request) throws IOException, InterruptedException {
+    IOException lastException = null;
+    for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() < 200 || response.statusCode() >= 400) {
+          throw new IOException("Remote status: " + response.statusCode());
+        }
+        return response.body();
+      } catch (IOException exception) {
+        lastException = exception;
+        if (attempt == MAX_ATTEMPTS) break;
+        log.warn("Remote request failed (attempt {}/{}): {} - {}",
+            attempt, MAX_ATTEMPTS, request.uri(), exception.toString());
+        Thread.sleep(500L * attempt);
+      }
     }
-    return response.body();
+    throw lastException;
   }
 }

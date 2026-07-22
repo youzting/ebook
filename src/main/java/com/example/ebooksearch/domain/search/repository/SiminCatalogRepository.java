@@ -9,12 +9,15 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 @Repository
 public class SiminCatalogRepository implements LibraryCatalogRepository {
+  private static final Logger log = LoggerFactory.getLogger(SiminCatalogRepository.class);
   private static final int PAGE_SIZE = 100;
   private static final LibrarySource SOURCE = LibrarySource.SIMIN;
   private final RemoteHttpClient http;
@@ -41,6 +44,8 @@ public class SiminCatalogRepository implements LibraryCatalogRepository {
       }
       return List.of(CatalogSearchResult.connected(SOURCE, searchUrl, totalCount, null, books));
     } catch (Exception exception) {
+      log.error("Simin library search failed for API {}: {}", SOURCE.homepage(),
+          exception.toString(), exception);
       return List.of(CatalogSearchResult.unavailable(SOURCE, searchUrl, "일시적으로 검색 결과를 불러오지 못했습니다."));
     }
   }
